@@ -29,6 +29,11 @@ databases: {}
 users: {}
 #  username: password
 
+usersSecretKeyRef: {}
+  # - username: ""
+  #   secret: ""
+  #   key: ""
+
 connectionLimits:
   maxClientConn: 200
   defaultPoolSize: 200
@@ -37,7 +42,7 @@ connectionLimits:
   reservePoolTimeout: 5
 
 spec:
-    labels: {} # Add custom pod labels here    
+    labels: {} # Add custom pod labels here
     annotations: {} # Add custom pod annotations here
       # Annotations are converted to a JSON string and run through
       # the helm `tpl` function. Then converted back to a map and

@@ -25,7 +25,7 @@
 ;;; Where to wait for clients
 listen_addr = 0.0.0.0
 listen_port = 5432
-unix_socket_dir = var/run/postgresql
+unix_socket_dir = /var/run/postgresql
 ;unix_socket_mode = 0777
 ;unix_socket_group =
 ;client_tls_sslmode = disable

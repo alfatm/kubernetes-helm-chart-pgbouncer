@@ -40,3 +40,16 @@ dependencies:
   version: 1.0.6
   repository: https://raw.githubusercontent.com/cradlepoint/kubernetes-helm-chart-pgbouncer/master/repos/stable
 ```
+
+
+
+snippet initContainers for auth_type=md5
+- |
+  touch /shared/userlist.txt
+  {{- range $row := .Values.usersSecretKeyRef }}
+    pg_user="{{ $row.username }}"
+    pg_password="${PG_PASSWORD_{{ $row.username | upper }}}"
+    hashsum=(`echo -n "${pg_password}${pg_user}" | md5sum`)
+    echo "\"${pg_user}\" \"md5${hashsum}\"\n" >> /shared/userlist.txt
+  {{- end }}
+  cat /etc/pgbouncer/userlist.txt >> /shared/userlist.txt

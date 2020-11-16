@@ -71,6 +71,39 @@ spec:
         - name: secret
           secret:
             secretName: {{ template "pgbouncer.fullname" . }}-secret
+        - name: shared
+          emptyDir: {}
+
+      initContainers:
+        - name: init-setup-userlist
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["bash", "-xuc"]
+          args:
+            - |
+              touch /shared/userlist.txt
+              {{- range $row := .Values.usersSecretKeyRef }}
+                pg_password="${PG_PASSWORD_{{ $row.username | upper }}}"
+                echo "\"{{ $row.username }}\" \"${pg_password}\"\n" >> /shared/userlist.txt
+              {{- end }}
+              cat /etc/pgbouncer/userlist.txt >> /shared/userlist.txt
+          env:
+            {{- range $row := .Values.usersSecretKeyRef }}
+            - name: "PG_PASSWORD_{{ required "Missing usersSecretKeyRef `username`" $row.username | upper }}"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "Missing usersSecretKeyRef `secret`" $row.secret | quote }}
+                  key: {{ required "Missing usersSecretKeyRef `key`" $row.key | quote }}
+            {{- end }}
+          volumeMounts:
+            - name: shared
+              mountPath: /shared
+              readOnly: false
+            - name: secret
+              subPath: userlist.txt
+              mountPath: /etc/pgbouncer/userlist.txt
+              readOnly: true
+
       containers:
         - name: pgbouncer
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -87,7 +120,7 @@ spec:
                 # https://freecontent.manning.com/handling-client-requests-properly-with-kubernetes/
                 command: ["/bin/sh","-c","sleep 5"]
           volumeMounts:
-            - name: secret
+            - name: shared
               subPath: userlist.txt
               mountPath: /etc/pgbouncer/userlist.txt
               readOnly: true
@@ -97,4 +130,3 @@ spec:
               readOnly: true
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-
